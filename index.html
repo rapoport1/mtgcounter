@@ -42,7 +42,7 @@
             display: grid; /* Use grid for layout */
             min-height: 0; /* Prevent grid overflow issues */
             gap: 0.25rem; /* Reduced gap */
-            padding-bottom: 0.25rem; /* Space above controls */
+            /* padding-bottom: 0.25rem; /* Removed padding as control bar is gone */
         }
 
         /* Base player card styles */
@@ -76,7 +76,7 @@
         input[type="text"] { min-height: 36px; }
 
          /* Commander damage section adjustments */
-        .commander-damage-list { /* Changed from .commander-damage-section */
+        .commander-damage-list {
             margin-top: 0.25rem; /* Reduced margin */
             overflow-y: auto; /* Allow this specific list to scroll if needed */
             flex-shrink: 1; /* Allow list to shrink */
@@ -97,11 +97,7 @@
             align-items: center;
             justify-content: space-between; /* Space out elements */
             padding: 0.125rem 0; /* py-0.5 px-0 */
-            /* border-bottom: 1px solid #f3f4f6; /* Optional: light border between items */
         }
-        /* .damage-from:last-child {
-            border-bottom: none;
-        } */
 
         .damage-from .opponent-label {
             font-size: 0.75rem; /* text-xs */
@@ -138,19 +134,6 @@
         .life-total { font-size: 1.875rem; /* text-3xl */ line-height: 2.25rem; /* leading-9 */ margin-bottom: 0.25rem; }
         .life-section .grid { gap: 0.125rem; }
 
-        /* Control bar */
-        #control-bar {
-            padding-top: 0.5rem; /* py-2 */
-            padding-bottom: 0.5rem;
-            background-color: #f3f4f6; /* bg-gray-100 */
-            border-top: 1px solid #e5e7eb; /* border-t border-gray-200 */
-            flex-shrink: 0; /* Prevent control bar from shrinking */
-        }
-        #control-bar button {
-             padding: 0.25rem 0.5rem; /* py-1 px-2 */
-             font-size: 0.75rem; /* text-xs */
-        }
-
         /* Hide scrollbars */
         .player-card::-webkit-scrollbar, .commander-damage-list::-webkit-scrollbar { display: none; } /* Chrome, Safari, Opera */
         .player-card, .commander-damage-list { -ms-overflow-style: none; scrollbar-width: none; } /* IE, Edge, Firefox */
@@ -176,15 +159,7 @@
 
         <div id="game-area" class="hidden"> <div id="players-area">
                 </div>
-             <div id="control-bar" class="text-center">
-                <button id="reset-game" class="bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition duration-150 ease-in-out shadow mr-2">
-                    Reset
-                </button>
-                 <button id="change-players" class="bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition duration-150 ease-in-out shadow">
-                    Change Players
-                </button>
-            </div>
-        </div>
+             </div>
 
     </div>
 
@@ -196,8 +171,7 @@
         const playerSetupDiv = document.getElementById('player-setup');
         const gameAreaDiv = document.getElementById('game-area');
         const playersAreaDiv = document.getElementById('players-area');
-        const resetGameButton = document.getElementById('reset-game');
-        const changePlayersButton = document.getElementById('change-players');
+        // Removed resetGameButton and changePlayersButton variables
 
         // --- Constants ---
         const STARTING_LIFE = 40;
@@ -252,6 +226,8 @@
                 commanderDamageHTML += `</div>`; // Close commander-damage-list
             }
 
+            // console.log(`Rendering card for Player ${player.id}, Life: ${player.life}`); // Removed debug log
+
             // Main player card structure (flex column layout)
             return `
                 <div class="player-card fade-in" data-player-id="${playerId}"> <input type="text" class="player-name text-sm font-semibold text-gray-800 border-b border-transparent focus:border-indigo-500 outline-none w-full text-center mb-1 bg-gray-50 rounded px-1 py-0.5 flex-shrink-0" value="${player.name}" placeholder="Enter Name">
@@ -283,11 +259,10 @@
                 players.push({
                     id: i,
                     name: `Player ${i}`, // Default name
-                    life: STARTING_LIFE,
+                    life: STARTING_LIFE, // Set life to 40
                     commanderDamageTaken: commanderDamageTaken
                 });
             }
-            // console.log("Initialized players:", players); // Log for debugging
         }
 
         /**
@@ -323,7 +298,6 @@
                 default: // Fallback for safety
                      playersAreaDiv.classList.add('grid-rows-1', 'grid-cols-1');
             }
-             // console.log(`Set grid layout for ${count} players:`, playersAreaDiv.className); // Log for debugging
         }
 
         /**
@@ -456,41 +430,19 @@
             gameAreaDiv.classList.add('fade-in', 'flex', 'flex-col'); // Ensure game area uses flex column
         }
 
-        // Resets all player scores to default values
-        function resetGame() {
-            // Confirmation dialog
-            if (confirm("Are you sure you want to reset the game?")) {
-                initializePlayerData(numPlayers); // Re-initialize data
-                renderPlayerCards(); // Re-render the UI
-                // console.log("Game reset");
-            }
-        }
+        // Removed resetGame function
 
-        // Switches view back to the player setup screen
-        function changePlayers() {
-            // Confirmation dialog
-            if (confirm("Are you sure? This will reset the current game.")) {
-                // Hide game area and show setup screen
-                gameAreaDiv.classList.add('hidden');
-                gameAreaDiv.classList.remove('flex', 'flex-col');
-                playerSetupDiv.classList.remove('hidden');
-                 playerSetupDiv.classList.add('flex'); // Make setup screen flex again
-                // Reset slider to current value for consistency
-                playerCountSlider.value = numPlayers;
-                updatePlayerCountDisplay();
-                // console.log("Returned to player setup");
-            }
-        }
+        // Removed changePlayers function
 
         // --- Initial Setup ---
         // Attach listeners to initial controls
         playerCountSlider.addEventListener('input', updatePlayerCountDisplay);
         startGameButton.addEventListener('click', startGame);
-        resetGameButton.addEventListener('click', resetGame);
-        changePlayersButton.addEventListener('click', changePlayers);
+        // Removed event listeners for reset and change players buttons
+
         // Set initial player count display
         updatePlayerCountDisplay();
-        // console.log("App Initialized - Compact Damage List"); // Version log
+        // console.log("App Initialized - Simplified"); // Version log
 
     </script>
 
