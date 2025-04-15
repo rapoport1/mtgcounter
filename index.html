@@ -135,7 +135,7 @@
         }
         .life-btn { padding-top: 0.25rem; padding-bottom: 0.25rem; min-height: 32px; font-size: 0.75rem; /* text-xs */ }
         .player-name { font-size: 0.875rem; /* text-sm */ margin-bottom: 0.25rem; padding-top: 0.125rem; padding-bottom: 0.125rem; }
-        .life-total { font-size: 1.875rem; /* text-3xl / line-height: 2.25rem; / leading-9 */ margin-bottom: 0.25rem; }
+        .life-total { font-size: 1.875rem; /* text-3xl */ line-height: 2.25rem; /* leading-9 */ margin-bottom: 0.25rem; }
         .life-section .grid { gap: 0.125rem; }
 
         /* Control bar */
@@ -228,13 +228,13 @@
             if (totalPlayers > 1) {
                 const opponentNames = players.reduce((acc, p) => { acc[p.id] = p.name; return acc; }, {});
                 // Container for the damage list (scrollable, shrinkable)
-                commanderDamageHTML += <div class="commander-damage-list">;
+                commanderDamageHTML += `<div class="commander-damage-list">`;
                 // Heading for the section (doesn't shrink)
-                commanderDamageHTML += <h4>Cmd Dmg Taken:</h4>;
+                commanderDamageHTML += `<h4>Cmd Dmg Taken:</h4>`;
                 // Loop through potential opponents to create list items
                 for (let i = 1; i <= totalPlayers; i++) {
                     if (i !== playerId) { // Don't show damage from self
-                        const opponentName = opponentNames[i] || P${i};
+                        const opponentName = opponentNames[i] || `P${i}`;
                         const shortOpponentName = opponentName.substring(0, 8) + (opponentName.length > 8 ? '…' : ''); // Slightly longer short name
                         const currentDamage = player.commanderDamageTaken[i] || 0;
                         // HTML for one row in the damage list (using flexbox)
@@ -249,7 +249,7 @@
                             </div>`;
                     }
                 }
-                commanderDamageHTML += </div>; // Close commander-damage-list
+                commanderDamageHTML += `</div>`; // Close commander-damage-list
             }
 
             // Main player card structure (flex column layout)
@@ -282,7 +282,7 @@
                 // Add player object to the array
                 players.push({
                     id: i,
-                    name: Player ${i}, // Default name
+                    name: `Player ${i}`, // Default name
                     life: STARTING_LIFE,
                     commanderDamageTaken: commanderDamageTaken
                 });
@@ -323,7 +323,7 @@
                 default: // Fallback for safety
                      playersAreaDiv.classList.add('grid-rows-1', 'grid-cols-1');
             }
-             // console.log(Set grid layout for ${count} players:, playersAreaDiv.className); // Log for debugging
+             // console.log(`Set grid layout for ${count} players:`, playersAreaDiv.className); // Log for debugging
         }
 
         /**
@@ -345,7 +345,7 @@
 
         // Updates the life total display in the UI
         function updateLifeDisplay(playerId, newLife) {
-            const lifeElement = playersAreaDiv.querySelector(.life-total[data-player-id="${playerId}"]);
+            const lifeElement = playersAreaDiv.querySelector(`.life-total[data-player-id="${playerId}"]`);
             if (lifeElement) {
                 lifeElement.textContent = newLife;
                 // Toggle text color based on life total
@@ -362,17 +362,17 @@
 
             // Update the damage number display
             const damageValue = targetPlayer.commanderDamageTaken[dealingOpponentId] || 0;
-            const dmgElement = playersAreaDiv.querySelector(.cmd-dmg[data-player-id="${targetPlayerId}"][data-opponent-id="${dealingOpponentId}"]);
+            const dmgElement = playersAreaDiv.querySelector(`.cmd-dmg[data-player-id="${targetPlayerId}"][data-opponent-id="${dealingOpponentId}"]`);
             if (dmgElement) dmgElement.textContent = damageValue;
 
             // Update the "Opponent Name:" label
-            const damageFromDiv = playersAreaDiv.querySelector(.player-card[data-player-id="${targetPlayerId}"] .damage-from[data-opponent-id="${dealingOpponentId}"]);
+            const damageFromDiv = playersAreaDiv.querySelector(`.player-card[data-player-id="${targetPlayerId}"] .damage-from[data-opponent-id="${dealingOpponentId}"]`);
             if (damageFromDiv) {
                 const opponentNameSpan = damageFromDiv.querySelector('.opponent-label'); // Target the name span by class
                 if (opponentNameSpan) {
-                    const opponentName = dealingOpponent.name || P${dealingOpponentId};
+                    const opponentName = dealingOpponent.name || `P${dealingOpponentId}`;
                     const shortOpponentName = opponentName.substring(0, 8) + (opponentName.length > 8 ? '…' : '');
-                    opponentNameSpan.textContent = ${shortOpponentName}:; // Update text
+                    opponentNameSpan.textContent = `${shortOpponentName}:`; // Update text
                     opponentNameSpan.title = opponentName; // Set full name as tooltip
                 }
             }
@@ -414,13 +414,13 @@
             const playerId = parseInt(input.closest('.player-card').dataset.playerId, 10);
             const player = players.find(p => p.id === playerId);
             // Use default name if input is empty, otherwise use trimmed input value
-            const newName = input.value.trim() === '' ? Player ${playerId} : input.value.trim();
+            const newName = input.value.trim() === '' ? `Player ${playerId}` : input.value.trim();
 
             // Update only if the name actually changed
             if (player && player.name !== newName) {
                 player.name = newName; // Update player data
                 input.value = newName; // Ensure input reflects name (handles default case)
-                // Update opponent name labels on all other player cards
+                // Update opponent name labels on all *other* player cards
                 players.forEach(otherPlayer => {
                     if (otherPlayer.id !== playerId && otherPlayer.commanderDamageTaken.hasOwnProperty(playerId)) {
                         updateCommanderDamageDisplay(otherPlayer.id, playerId); // Update the display on other cards
