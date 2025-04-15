@@ -1,15 +1,52 @@
-<div id="game-controls" class="flex justify-between items-center gap-4 mb-4 p-4">
-  <div class="flex items-center gap-2">
-    <select id="player-count" class="bg-neutral-3 border border-neutral-6 rounded px-2 py-1">
-      <option value="1">1 Player</option>
-      <option value="2">2 Players</option>
-      <option value="3">3 Players</option>
-      <option value="4" selected>4 Players</option>
-      <option value="5">5 Players</option>
-      <option value="6">6 Players</option>
-    </select>
+<div class="container">
+  <!-- Main Life Counter -->
+  <div class="card life-counter">
+    <h2>Life Total</h2>
+    <div class="counter-controls">
+      <button onclick="adjustLife(-1)">-</button>
+      <span id="life-total">40</span>
+      <button onclick="adjustLife(1)">+</button>
+    </div>
   </div>
-  <button id="reset-game" class="px-4 py-2 bg-neutral-3 hover:bg-neutral-4 rounded">Reset Game</button>
-</div>
 
-<div id="players-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4"></div>
+  <!-- Commander Damage Section -->
+  <div class="commander-section">
+    <h2>Commander Damage</h2>
+    <div id="commander-container">
+      <div class="commander-card">
+        <input type="text" placeholder="Commander 1" class="commander-name">
+        <div class="counter-controls">
+          <button onclick="adjustDamage(0, -1)">-</button>
+          <span class="damage-counter">0</span>
+          <button onclick="adjustDamage(0, 1)">+</button>
+        </div>
+      </div>
+      <div class="commander-card">
+        <input type="text" placeholder="Commander 2" class="commander-name">
+        <div class="counter-controls">
+          <button onclick="adjustDamage(1, -1)">-</button>
+          <span class="damage-counter">0</span>
+          <button onclick="adjustDamage(1, 1)">+</button>
+        </div>
+      </div>
+      <div class="commander-card">
+        <input type="text" placeholder="Commander 3" class="commander-name">
+        <div class="counter-controls">
+          <button onclick="adjustDamage(2, -1)">-</button>
+          <span class="damage-counter">0</span>
+          <button onclick="adjustDamage(2, 1)">+</button>
+        </div>
+      </div>
+      <div class="commander-card">
+        <input type="text" placeholder="Commander 4" class="commander-name">
+        <div class="counter-controls">
+          <button onclick="adjustDamage(3, -1)">-</button>
+          <span class="damage-counter">0</span>
+          <button onclick="adjustDamage(3, 1)">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button onclick="resetGame()" class="reset-button">Reset Game</button>
+</div>
