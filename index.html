@@ -1,52 +1,498 @@
-<div class="container">
-  <!-- Main Life Counter -->
-  <div class="card life-counter">
-    <h2>Life Total</h2>
-    <div class="counter-controls">
-      <button onclick="adjustLife(-1)">-</button>
-      <span id="life-total">40</span>
-      <button onclick="adjustLife(1)">+</button>
-    </div>
-  </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MTG Commander Counter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        html, body {
+            height: 100%; /* Ensure body takes full height */
+            overflow: hidden; /* Prevent scrolling on the body itself */
+            position: fixed; /* Prevent pull-to-refresh/scroll effects */
+            width: 100%;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        #app-container {
+            flex-grow: 1; /* Allow app container to grow */
+            display: flex; /* Use flexbox for main container */
+            flex-direction: column;
+            overflow: hidden; /* Prevent scrolling on app container */
+            padding: 0.5rem; /* Reduced padding */
+            max-width: 100%; /* Use full width */
+        }
 
-  <!-- Commander Damage Section -->
-  <div class="commander-section">
-    <h2>Commander Damage</h2>
-    <div id="commander-container">
-      <div class="commander-card">
-        <input type="text" placeholder="Commander 1" class="commander-name">
-        <div class="counter-controls">
-          <button onclick="adjustDamage(0, -1)">-</button>
-          <span class="damage-counter">0</span>
-          <button onclick="adjustDamage(0, 1)">+</button>
-        </div>
-      </div>
-      <div class="commander-card">
-        <input type="text" placeholder="Commander 2" class="commander-name">
-        <div class="counter-controls">
-          <button onclick="adjustDamage(1, -1)">-</button>
-          <span class="damage-counter">0</span>
-          <button onclick="adjustDamage(1, 1)">+</button>
-        </div>
-      </div>
-      <div class="commander-card">
-        <input type="text" placeholder="Commander 3" class="commander-name">
-        <div class="counter-controls">
-          <button onclick="adjustDamage(2, -1)">-</button>
-          <span class="damage-counter">0</span>
-          <button onclick="adjustDamage(2, 1)">+</button>
-        </div>
-      </div>
-      <div class="commander-card">
-        <input type="text" placeholder="Commander 4" class="commander-name">
-        <div class="counter-controls">
-          <button onclick="adjustDamage(3, -1)">-</button>
-          <span class="damage-counter">0</span>
-          <button onclick="adjustDamage(3, 1)">+</button>
-        </div>
-      </div>
-    </div>
-  </div>
+        #game-area {
+            flex-grow: 1; /* Make game area fill available space */
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* Prevent flex overflow issues */
+            overflow: hidden; /* Hide overflow */
+        }
 
-  <button onclick="resetGame()" class="reset-button">Reset Game</button>
-</div>
+        #players-area {
+            flex-grow: 1; /* Make players area fill game area */
+            display: grid; /* Use grid for layout */
+            min-height: 0; /* Prevent grid overflow issues */
+            gap: 0.25rem; /* Reduced gap */
+            padding-bottom: 0.25rem; /* Space above controls */
+        }
+
+        /* Base player card styles */
+        .player-card {
+            background-color: white;
+            border-radius: 0.375rem; /* rounded-md */
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
+            border: 1px solid #e5e7eb; /* border border-gray-200 */
+            display: flex;
+            flex-direction: column;
+            padding: 0.5rem; /* p-2 */
+            overflow-y: auto; /* Allow internal scrolling if content overflows */
+            min-height: 0; /* Prevent flex item overflow */
+        }
+
+        /* Style range input track */
+        input[type="range"]::-webkit-slider-runnable-track { background: #e5e7eb; height: 0.5rem; border-radius: 0.25rem; }
+        input[type="range"]::-moz-range-track { background: #e5e7eb; height: 0.5rem; border-radius: 0.25rem; }
+        /* Style range input thumb */
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 1.25rem; height: 1.25rem; background: #4f46e5; cursor: pointer; border-radius: 9999px; margin-top: -0.375rem; }
+        input[type="range"]::-moz-range-thumb { width: 1.25rem; height: 1.25rem; background: #4f46e5; cursor: pointer; border-radius: 9999px; border: none; }
+
+        /* Simple fade-in animation */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Prevent text selection on buttons */
+        button { user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; }
+
+        /* Input height */
+        input[type="text"] { min-height: 36px; }
+
+         /* Commander damage section adjustments */
+        .commander-damage-list { /* Changed from .commander-damage-section */
+            margin-top: 0.25rem; /* Reduced margin */
+            overflow-y: auto; /* Allow this specific list to scroll if needed */
+            flex-shrink: 1; /* Allow list to shrink */
+            min-height: 0; /* Prevent flexbox overflow */
+        }
+        .commander-damage-list > h4 {
+            margin-bottom: 0.125rem; /* mb-0.5 */
+            padding-top: 0.25rem; /* pt-1 */
+            border-top: 1px solid #e5e7eb; /* border-t */
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600; /* font-semibold */
+            color: #4b5563; /* text-gray-600 */
+            flex-shrink: 0; /* Prevent heading from shrinking */
+        }
+        /* Style for each row in the damage list */
+        .damage-from {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Space out elements */
+            padding: 0.125rem 0; /* py-0.5 px-0 */
+            /* border-bottom: 1px solid #f3f4f6; /* Optional: light border between items */
+        }
+        /* .damage-from:last-child {
+            border-bottom: none;
+        } */
+
+        .damage-from .opponent-label {
+            font-size: 0.75rem; /* text-xs */
+            color: #4b5563; /* text-gray-600 */
+            flex-shrink: 0;
+            margin-right: 0.25rem; /* mr-1 */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 60px; /* Limit label width */
+        }
+         .damage-from .damage-controls {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            margin-left: auto; /* Push controls to the right */
+        }
+
+        .cmd-dmg-btn {
+            width: 1.125rem; /* w-4.5 */
+            height: 1.125rem; /* h-4.5 */
+            font-size: 0.75rem; /* text-xs */
+            line-height: 1;
+            margin: 0 0.125rem; /* mx-0.5 */
+        }
+        .cmd-dmg {
+            width: 1.25rem; /* w-5 */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 600; /* font-semibold */
+            text-align: center;
+        }
+        .life-btn { padding-top: 0.25rem; padding-bottom: 0.25rem; min-height: 32px; font-size: 0.75rem; /* text-xs */ }
+        .player-name { font-size: 0.875rem; /* text-sm */ margin-bottom: 0.25rem; padding-top: 0.125rem; padding-bottom: 0.125rem; }
+        .life-total { font-size: 1.875rem; /* text-3xl / line-height: 2.25rem; / leading-9 */ margin-bottom: 0.25rem; }
+        .life-section .grid { gap: 0.125rem; }
+
+        /* Control bar */
+        #control-bar {
+            padding-top: 0.5rem; /* py-2 */
+            padding-bottom: 0.5rem;
+            background-color: #f3f4f6; /* bg-gray-100 */
+            border-top: 1px solid #e5e7eb; /* border-t border-gray-200 */
+            flex-shrink: 0; /* Prevent control bar from shrinking */
+        }
+        #control-bar button {
+             padding: 0.25rem 0.5rem; /* py-1 px-2 */
+             font-size: 0.75rem; /* text-xs */
+        }
+
+        /* Hide scrollbars */
+        .player-card::-webkit-scrollbar, .commander-damage-list::-webkit-scrollbar { display: none; } /* Chrome, Safari, Opera */
+        .player-card, .commander-damage-list { -ms-overflow-style: none; scrollbar-width: none; } /* IE, Edge, Firefox */
+
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="app-container">
+
+        <div id="player-setup" class="bg-white p-4 md:p-6 rounded-lg shadow-md text-center fade-in flex flex-col justify-center items-center flex-grow">
+             <div> <h1 class="text-xl md:text-2xl font-bold mb-3 text-gray-800">Commander Companion</h1>
+                <label for="player-count-slider" class="block text-base md:text-lg font-medium text-gray-700 mb-2">Select Number of Players:</label>
+                <div class="flex justify-center items-center space-x-3 mb-3">
+                     <input type="range" id="player-count-slider" min="1" max="6" value="4" class="w-36 md:w-48 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                     <span id="player-count-display" class="text-lg md:text-xl font-semibold text-indigo-600 w-8 text-center">4</span>
+                </div>
+                <button id="start-game" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 md:py-3 md:px-6 rounded-lg transition duration-150 ease-in-out text-base md:text-lg shadow">
+                    Start Game
+                </button>
+            </div>
+        </div>
+
+        <div id="game-area" class="hidden"> <div id="players-area">
+                </div>
+             <div id="control-bar" class="text-center">
+                <button id="reset-game" class="bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition duration-150 ease-in-out shadow mr-2">
+                    Reset
+                </button>
+                 <button id="change-players" class="bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition duration-150 ease-in-out shadow">
+                    Change Players
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const playerCountSlider = document.getElementById('player-count-slider');
+        const playerCountDisplay = document.getElementById('player-count-display');
+        const startGameButton = document.getElementById('start-game');
+        const playerSetupDiv = document.getElementById('player-setup');
+        const gameAreaDiv = document.getElementById('game-area');
+        const playersAreaDiv = document.getElementById('players-area');
+        const resetGameButton = document.getElementById('reset-game');
+        const changePlayersButton = document.getElementById('change-players');
+
+        // --- Constants ---
+        const STARTING_LIFE = 40;
+
+        // --- State ---
+        let players = []; // Array to hold player data objects
+        let numPlayers = 4; // Default number of players
+
+        // --- Functions ---
+
+        // Updates the displayed player count next to the slider
+        function updatePlayerCountDisplay() {
+            numPlayers = parseInt(playerCountSlider.value, 10);
+            playerCountDisplay.textContent = numPlayers;
+        }
+
+        /**
+         * Creates the HTML string for a single player card using compact list for damage.
+         * @param {object} player - The player data object.
+         * @param {number} totalPlayers - Total players in the game.
+         * @returns {string} HTML string for the player card.
+         */
+        function createPlayerCardHTML(player, totalPlayers) {
+            const playerId = player.id;
+            let commanderDamageHTML = '';
+
+            // Generate commander damage section only if more than 1 player
+            if (totalPlayers > 1) {
+                const opponentNames = players.reduce((acc, p) => { acc[p.id] = p.name; return acc; }, {});
+                // Container for the damage list (scrollable, shrinkable)
+                commanderDamageHTML += <div class="commander-damage-list">;
+                // Heading for the section (doesn't shrink)
+                commanderDamageHTML += <h4>Cmd Dmg Taken:</h4>;
+                // Loop through potential opponents to create list items
+                for (let i = 1; i <= totalPlayers; i++) {
+                    if (i !== playerId) { // Don't show damage from self
+                        const opponentName = opponentNames[i] || P${i};
+                        const shortOpponentName = opponentName.substring(0, 8) + (opponentName.length > 8 ? '…' : ''); // Slightly longer short name
+                        const currentDamage = player.commanderDamageTaken[i] || 0;
+                        // HTML for one row in the damage list (using flexbox)
+                        commanderDamageHTML += `
+                            <div class="damage-from" data-opponent-id="${i}">
+                                <span class="opponent-label" title="${opponentName}">${shortOpponentName}:</span>
+                                <div class="damage-controls">
+                                    <button class="cmd-dmg-btn text-red-500 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center font-bold" data-change="-1" data-player-id="${playerId}" data-opponent-id="${i}">-</button>
+                                    <span class="cmd-dmg text-gray-800" data-player-id="${playerId}" data-opponent-id="${i}">${currentDamage}</span>
+                                    <button class="cmd-dmg-btn text-green-500 bg-green-100 hover:bg-green-200 rounded-full flex items-center justify-center font-bold" data-change="1" data-player-id="${playerId}" data-opponent-id="${i}">+</button>
+                                </div>
+                            </div>`;
+                    }
+                }
+                commanderDamageHTML += </div>; // Close commander-damage-list
+            }
+
+            // Main player card structure (flex column layout)
+            return `
+                <div class="player-card fade-in" data-player-id="${playerId}"> <input type="text" class="player-name text-sm font-semibold text-gray-800 border-b border-transparent focus:border-indigo-500 outline-none w-full text-center mb-1 bg-gray-50 rounded px-1 py-0.5 flex-shrink-0" value="${player.name}" placeholder="Enter Name">
+
+                    <div class="life-section text-center mb-1 flex-shrink-0">
+                        <span class="life-total block text-3xl font-bold ${player.life <= 10 ? 'text-red-600' : 'text-indigo-700'} mb-1" data-player-id="${playerId}">${player.life}</span>
+                        <div class="grid grid-cols-4 gap-0.5">
+                             <button class="life-btn bg-red-200 hover:bg-red-300 text-red-800 font-bold rounded text-xs transition duration-150" data-change="-5" data-player-id="${playerId}">-5</button>
+                            <button class="life-btn bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded text-xs transition duration-150" data-change="-1" data-player-id="${playerId}">-1</button>
+                            <button class="life-btn bg-green-100 hover:bg-green-200 text-green-700 font-bold rounded text-xs transition duration-150" data-change="1" data-player-id="${playerId}">+1</button>
+                             <button class="life-btn bg-green-200 hover:bg-green-300 text-green-800 font-bold rounded text-xs transition duration-150" data-change="5" data-player-id="${playerId}">+5</button>
+                        </div>
+                    </div>
+
+                    ${commanderDamageHTML}
+                </div>`;
+        }
+
+        // Initializes the global 'players' array based on the selected count
+        function initializePlayerData(count) {
+            players = []; // Reset players array
+            for (let i = 1; i <= count; i++) {
+                const commanderDamageTaken = {};
+                // Initialize damage taken from all potential opponents to 0
+                for (let j = 1; j <= count; j++) {
+                    if (i !== j) commanderDamageTaken[j] = 0;
+                }
+                // Add player object to the array
+                players.push({
+                    id: i,
+                    name: Player ${i}, // Default name
+                    life: STARTING_LIFE,
+                    commanderDamageTaken: commanderDamageTaken
+                });
+            }
+            // console.log("Initialized players:", players); // Log for debugging
+        }
+
+        /**
+         * Sets the appropriate CSS grid classes on the playersAreaDiv
+         * based on the number of players to achieve the fixed layout.
+         * @param {number} count - The number of players.
+         */
+        function setGridLayout(count) {
+            playersAreaDiv.className = ''; // Clear existing classes first
+            // Add base classes required for grid and flex-grow behavior
+            playersAreaDiv.classList.add('grid', 'gap-1', 'flex-grow', 'min-h-0');
+
+            // Apply specific row/column classes based on player count
+            switch (count) {
+                case 1:
+                    playersAreaDiv.classList.add('grid-rows-1', 'grid-cols-1');
+                    break;
+                case 2:
+                    playersAreaDiv.classList.add('grid-rows-2', 'grid-cols-1');
+                    break;
+                case 3:
+                    playersAreaDiv.classList.add('grid-rows-3', 'grid-cols-1'); // Stack vertically
+                    break;
+                case 4:
+                    playersAreaDiv.classList.add('grid-rows-2', 'grid-cols-2'); // 2x2 grid
+                    break;
+                case 5:
+                    playersAreaDiv.classList.add('grid-rows-3', 'grid-cols-2'); // 3 rows, 2 cols (last row has 1)
+                    break;
+                case 6:
+                    playersAreaDiv.classList.add('grid-rows-3', 'grid-cols-2'); // 3x2 grid
+                    break;
+                default: // Fallback for safety
+                     playersAreaDiv.classList.add('grid-rows-1', 'grid-cols-1');
+            }
+             // console.log(Set grid layout for ${count} players:, playersAreaDiv.className); // Log for debugging
+        }
+
+        /**
+         * Renders player cards into the playersAreaDiv and applies the grid layout.
+         */
+        function renderPlayerCards() {
+            setGridLayout(players.length); // Apply grid layout classes
+            playersAreaDiv.innerHTML = ''; // Clear existing cards
+            const totalPlayers = players.length;
+
+            // Create and append HTML for each player
+            players.forEach((player, index) => {
+                let cardHTML = createPlayerCardHTML(player, totalPlayers);
+                 playersAreaDiv.innerHTML += cardHTML;
+            });
+
+            attachEventListeners(); // Re-attach listeners to the new elements
+        }
+
+        // Updates the life total display in the UI
+        function updateLifeDisplay(playerId, newLife) {
+            const lifeElement = playersAreaDiv.querySelector(.life-total[data-player-id="${playerId}"]);
+            if (lifeElement) {
+                lifeElement.textContent = newLife;
+                // Toggle text color based on life total
+                lifeElement.classList.remove('text-red-600', 'text-indigo-700');
+                lifeElement.classList.add(newLife <= 10 ? 'text-red-600' : 'text-indigo-700');
+            }
+        }
+
+        // Updates the commander damage display and opponent name label in the UI
+        function updateCommanderDamageDisplay(targetPlayerId, dealingOpponentId) {
+            const targetPlayer = players.find(p => p.id === targetPlayerId);
+            const dealingOpponent = players.find(p => p.id === dealingOpponentId);
+            if (!targetPlayer || !dealingOpponent) return; // Exit if data is missing
+
+            // Update the damage number display
+            const damageValue = targetPlayer.commanderDamageTaken[dealingOpponentId] || 0;
+            const dmgElement = playersAreaDiv.querySelector(.cmd-dmg[data-player-id="${targetPlayerId}"][data-opponent-id="${dealingOpponentId}"]);
+            if (dmgElement) dmgElement.textContent = damageValue;
+
+            // Update the "Opponent Name:" label
+            const damageFromDiv = playersAreaDiv.querySelector(.player-card[data-player-id="${targetPlayerId}"] .damage-from[data-opponent-id="${dealingOpponentId}"]);
+            if (damageFromDiv) {
+                const opponentNameSpan = damageFromDiv.querySelector('.opponent-label'); // Target the name span by class
+                if (opponentNameSpan) {
+                    const opponentName = dealingOpponent.name || P${dealingOpponentId};
+                    const shortOpponentName = opponentName.substring(0, 8) + (opponentName.length > 8 ? '…' : '');
+                    opponentNameSpan.textContent = ${shortOpponentName}:; // Update text
+                    opponentNameSpan.title = opponentName; // Set full name as tooltip
+                }
+            }
+        }
+
+        // Handles clicks on the main life adjustment buttons
+        function handleLifeChange(event) {
+            const button = event.target.closest('.life-btn');
+            if (!button) return; // Ignore clicks not on a life button
+            const change = parseInt(button.dataset.change, 10);
+            const playerId = parseInt(button.dataset.playerId, 10);
+            const player = players.find(p => p.id === playerId);
+            if (player) {
+                player.life += change; // Update player data
+                updateLifeDisplay(playerId, player.life); // Update UI
+            }
+        }
+
+        // Handles clicks on the commander damage adjustment buttons
+        function handleCommanderDamageChange(event) {
+            const button = event.target.closest('.cmd-dmg-btn');
+            if (!button) return; // Ignore clicks not on a cmd dmg button
+            const change = parseInt(button.dataset.change, 10);
+            const playerId = parseInt(button.dataset.playerId, 10); // Player receiving damage
+            const opponentId = parseInt(button.dataset.opponentId, 10); // Player dealing damage
+            const player = players.find(p => p.id === playerId);
+            // Check if player exists and opponent is valid
+            if (player && player.commanderDamageTaken.hasOwnProperty(opponentId)) {
+                // Update damage, ensuring it doesn't go below 0
+                player.commanderDamageTaken[opponentId] = Math.max(0, player.commanderDamageTaken[opponentId] + change);
+                updateCommanderDamageDisplay(playerId, opponentId); // Update UI
+            }
+        }
+
+        // Handles changes in the player name input fields
+        function handleNameChange(event) {
+            const input = event.target.closest('.player-name');
+            if (!input) return; // Ignore changes not from a name input
+            const playerId = parseInt(input.closest('.player-card').dataset.playerId, 10);
+            const player = players.find(p => p.id === playerId);
+            // Use default name if input is empty, otherwise use trimmed input value
+            const newName = input.value.trim() === '' ? Player ${playerId} : input.value.trim();
+
+            // Update only if the name actually changed
+            if (player && player.name !== newName) {
+                player.name = newName; // Update player data
+                input.value = newName; // Ensure input reflects name (handles default case)
+                // Update opponent name labels on all other player cards
+                players.forEach(otherPlayer => {
+                    if (otherPlayer.id !== playerId && otherPlayer.commanderDamageTaken.hasOwnProperty(playerId)) {
+                        updateCommanderDamageDisplay(otherPlayer.id, playerId); // Update the display on other cards
+                    }
+                });
+            }
+        }
+
+        // Attaches event listeners using event delegation on the playersAreaDiv
+        function attachEventListeners() {
+            // Single click listener for all buttons within the players area
+            playersAreaDiv.onclick = function(event) {
+                handleLifeChange(event); // Check if it was a life button
+                handleCommanderDamageChange(event); // Check if it was a cmd dmg button
+            };
+            // Listener for when name input value changes (on blur/enter)
+            playersAreaDiv.onchange = function(event) {
+                 if (event.target.classList.contains('player-name')) {
+                     handleNameChange(event);
+                 }
+            };
+        }
+
+        // Switches view to the game area, initializes players and layout
+        function startGame() {
+            numPlayers = parseInt(playerCountSlider.value, 10); // Get player count
+            initializePlayerData(numPlayers); // Setup player data structure
+            renderPlayerCards(); // Render cards and apply grid layout
+            // Hide setup screen and show game area
+            playerSetupDiv.classList.add('hidden');
+            playerSetupDiv.classList.remove('flex');
+            gameAreaDiv.classList.remove('hidden');
+            gameAreaDiv.classList.add('fade-in', 'flex', 'flex-col'); // Ensure game area uses flex column
+        }
+
+        // Resets all player scores to default values
+        function resetGame() {
+            // Confirmation dialog
+            if (confirm("Are you sure you want to reset the game?")) {
+                initializePlayerData(numPlayers); // Re-initialize data
+                renderPlayerCards(); // Re-render the UI
+                // console.log("Game reset");
+            }
+        }
+
+        // Switches view back to the player setup screen
+        function changePlayers() {
+            // Confirmation dialog
+            if (confirm("Are you sure? This will reset the current game.")) {
+                // Hide game area and show setup screen
+                gameAreaDiv.classList.add('hidden');
+                gameAreaDiv.classList.remove('flex', 'flex-col');
+                playerSetupDiv.classList.remove('hidden');
+                 playerSetupDiv.classList.add('flex'); // Make setup screen flex again
+                // Reset slider to current value for consistency
+                playerCountSlider.value = numPlayers;
+                updatePlayerCountDisplay();
+                // console.log("Returned to player setup");
+            }
+        }
+
+        // --- Initial Setup ---
+        // Attach listeners to initial controls
+        playerCountSlider.addEventListener('input', updatePlayerCountDisplay);
+        startGameButton.addEventListener('click', startGame);
+        resetGameButton.addEventListener('click', resetGame);
+        changePlayersButton.addEventListener('click', changePlayers);
+        // Set initial player count display
+        updatePlayerCountDisplay();
+        // console.log("App Initialized - Compact Damage List"); // Version log
+
+    </script>
+
+</body>
+</html>
