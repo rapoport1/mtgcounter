@@ -1,1 +1,15 @@
-<div id="root"></div>
+<div id="game-controls" class="flex justify-between items-center gap-4 mb-4 p-4">
+  <div class="flex items-center gap-2">
+    <select id="player-count" class="bg-neutral-3 border border-neutral-6 rounded px-2 py-1">
+      <option value="1">1 Player</option>
+      <option value="2">2 Players</option>
+      <option value="3">3 Players</option>
+      <option value="4" selected>4 Players</option>
+      <option value="5">5 Players</option>
+      <option value="6">6 Players</option>
+    </select>
+  </div>
+  <button id="reset-game" class="px-4 py-2 bg-neutral-3 hover:bg-neutral-4 rounded">Reset Game</button>
+</div>
+
+<div id="players-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4"></div>
